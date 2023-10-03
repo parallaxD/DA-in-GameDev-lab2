@@ -1,4 +1,4 @@
-![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/c69f8f30-ea57-41f3-97ae-5fbed40c843d)# АНАЛИЗ ДАННЫХ И ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ [in GameDev]
+
 Отчет по лабораторной работе #2 выполнил(а):
 - Куплевацкий Денис Игоревич
 - РИ220931
@@ -213,7 +213,6 @@ for i in range(0, len(game_times)-1):
     sh.sheet1.update(('F') + str(i+2), str(round(cur_gold)), value_input_option='USER_ENTERED')
 
 ```
-![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/cf3d5b35-8b14-4f96-9c79-84c947211828)
 
 ![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/4761775f-22c1-4b44-8ad2-3b799f2727e0)
 
