@@ -1,4 +1,4 @@
-# АНАЛИЗ ДАННЫХ И ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ [in GameDev]
+![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/c69f8f30-ea57-41f3-97ae-5fbed40c843d)# АНАЛИЗ ДАННЫХ И ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ [in GameDev]
 Отчет по лабораторной работе #1 выполнил(а):
 - Куплевацкий Денис Игоревич
 - РИ220931
@@ -86,11 +86,11 @@
 
 1) **Источники золота**: 
 
-- Убийство крипов (подвластных и неподвластных игрокам). 
+- Убийство крипов (подвластных и неподвластных игрокам, в среднем от 38 до 53 ед. золота). 
 
 - Убийство героев вражеской команды (125 + (УровеньУбитогоГероя × 8) + ЗначениеСерииУбийств). 
 
-- Разрушение вражеских строений. 
+- Разрушение вражеских строений (от 90 до 775 ед. золота).
 
 - Каждый игрок пассивно получает 1  надёжного золота каждые 0,67 секунды (начиная с 0:00 по игровому времени), что в итоге даёт 90  золота в минуту в начале игры. Это периодическое золото увеличивается со временем игры.	 
 
@@ -107,7 +107,7 @@
  | 175:00 | 150.5 |
  
 
-- Подбор рун богатства. 
+- Подбор рун богатства(потолка нет).
 
 - Некоторые игровые способности дают героям золото. 
 
@@ -132,36 +132,200 @@
 ## Задание 2
 ### С помощью скрипта на языке Python заполните google-таблицу данными, описывающими выбранную игровую переменную в выбранной игре (в качестве таких переменных может выступать игровая валюта, ресурсы, здоровье и т.д.). Средствами google-sheets визуализируйте данные в google-таблице (постройте график, диаграмму и пр.) для наглядного представления выбранной игровой величины.
 
+С помощью скрипта происходит примитивная симуляция добычи и траты золото игроком.
+Ведется учёт получение денег из следующих источников:
+Минута игры,
+Пассивное золото за период,
+Золото за крипов,
+Золото за героев,
+Всего золота в кармане.
+
+Также симулируется трата золота игроком на покупку предметов. 
+
+Данные заносятся в таблицу. На их основе строится диаграмма, на которой наглядно видно, из какого источника игрок получает наибольшее конличество золота.
+
+```python
+
+import gspread
+import numpy as np
+import random
+
+def calculate_gold(enemy_level, killing_streak):
+    return 125 + (enemy_level * 8) + killing_streak
 
 
+gc = gspread.service_account(filename='unitydatascience-400808-d2c1489cd6ba.json')
+sh = gc.open("UnityDataScience")
+
+game_times = [0, 12, 30, 45, 62, 87, 112, 140, 175]
+golds = [90, 94.8, 99.8, 105.5, 112.8, 120.5, 129, 139, 150.5]
+gold_per_streak = {1:0, 2:0, 3:60, 4:100, 5:150, 6:210, 7:280, 8:360, 9:450, 10:550}
+
+cur_gold = 0
+cur_streak = 0
+enemy_networth = 0 # общая ценность противника #
+
+
+sh.sheet1.update(('A') + '1', 'Минута игры')
+sh.sheet1.update(('B') + '1', 'Пассивное золото за период')
+sh.sheet1.update(('C') + '1', 'Золото за крипов')
+sh.sheet1.update(('D') + '1', 'Золото за героев')
+sh.sheet1.update(('E') + '1', 'Золото за предмет(если купил)')
+sh.sheet1.update(('F') + '1', 'Всего золота в кармане')
+
+
+for i in range(2,len(game_times)+1):
+    sh.sheet1.update(('A') + str(i), str(game_times[i-1]), value_input_option='USER_ENTERED')
+for i in range(0, len(game_times)-1):
+    gold_per_minute = golds[i] * (game_times[i+1] - game_times[i])
+    cur_gold += gold_per_minute
+    killed_enemy = random.choice([True, False])
+    has_bought_item = random.choice([True, False])
+    
+    gold_for_enemy = 0
+    gold_for_creeps = 0
+    gold_for_item = 0
+
+    if killed_enemy:
+        enemy_level = random.randint(1, 30)
+        enemy_streak = random.randint(1, 10)
+        gold_for_enemy += calculate_gold(enemy_level, gold_per_streak[enemy_streak])
+    cur_gold += gold_for_enemy
+
+    killed_creeps_count = random.randint(80, 150)
+    for j in range(killed_creeps_count):
+        gold_for_creeps += random.randint(38, 53)
+    cur_gold += gold_for_creeps
+    
+    if has_bought_item:
+        gold_for_item = random.randint(2000,6000)
+        if gold_for_item < cur_gold:
+            cur_gold -= gold_for_item
+        else: has_bought_item = False
+
+    has_died = random.choice([True, False])
+    if has_died:
+        cur_gold -= cur_gold / 40
+    sh.sheet1.update(('B') + str(i+2), str(round(gold_per_minute)), value_input_option='USER_ENTERED')
+    sh.sheet1.update(('C') + str(i+2), str(gold_for_creeps), value_input_option='USER_ENTERED')
+    sh.sheet1.update(('D') + str(i+2), str(gold_for_enemy), value_input_option='USER_ENTERED')
+    sh.sheet1.update(('E') + str(i+2), str(-gold_for_item), value_input_option='USER_ENTERED')
+    sh.sheet1.update(('F') + str(i+2), str(round(cur_gold)), value_input_option='USER_ENTERED')
+
+```
+![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/cf3d5b35-8b14-4f96-9c79-84c947211828)
+
+![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/4761775f-22c1-4b44-8ad2-3b799f2727e0)
+
+![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/b8943c20-1577-4a4b-86e7-c8143e3b84e7)
+
+
+https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/2d5b77c5-e4be-466a-b029-d95435fb23a7
+
+
+## Задание 3
+### Настройте на сцене Unity воспроизведение звуковых файлов, описывающих динамику изменения выбранной переменной. Например, если выбрано здоровье главного персонажа вы можете выводить сообщения, связанные с его состоянием.
+
+- Была создана новая сцена в Unity3D.
+- Создан пустой GameObject.
+- Создан скрипт, отвечающий за получение данных из таблицы и вопроизведение звуков на основе полученных данных.
+
+Скрипт считывает количество золота, полученное за убийство крипов в период времени. Если кол-во золота >= 5000, то проигрывается звук **"Welcome to the secret shop!"**, как бы приглашая игрока потратить эти деньги. А если кол-во золото в промежутке [2000, 5000), то воспроизводится звук **"Oh, i open all night"**, как бы говоря игроку, что лавка работает всю ночь и у него есть время заработать денег побольше
 
 ```C#
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
+using SimpleJSON;
 
-public class HelloWorldWriter : MonoBehaviour
+[RequireComponent(typeof(AudioSource))]
+public class NewBehaviourScript : MonoBehaviour
 {
-    void Start()
+    public AudioClip goodSpeak;
+    public AudioClip badSpeak;
+    private AudioSource selectAudio;
+    private List<int> goldsForCreeps = new List<int>();
+    private bool statusStart = false;
+    private int i = 0;
+
+    // Start is called before the first frame update
+    void Awake()
     {
-        Debug.Log("Hello World");
+        StartCoroutine(GoogleSheets());
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (goldsForCreeps.Count == 0) return;
+        if (i != goldsForCreeps.Count && goldsForCreeps[i] >= 5000 && statusStart == false)
+        {
+            StartCoroutine(PlaySelectAudioGood());
+            print(goldsForCreeps[i]);
+        }
+        if (i != goldsForCreeps.Count && goldsForCreeps[i] >= 2000 && goldsForCreeps[i] < 5000 && statusStart == false)
+        {
+            StartCoroutine(PlaySelectAudioBad());
+            print(goldsForCreeps[i]);
+        }
+    }
+
+    IEnumerator GoogleSheets()
+    {
+        UnityWebRequest curentResp = UnityWebRequest.Get("https://sheets.googleapis.com/v4/spreadsheets/1GqzywPoKKUtoeGm7jLbkuQzhJfh3Y2jnlz49GGimWO0/values/Лист1?key=AIzaSyCW-0saPZJfgfi8BCqL3NcKIlPBGU-zMlo");
+        yield return curentResp.SendWebRequest();
+
+        if (curentResp.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("Network error: " + curentResp.error);
+            yield break;
+        }
+
+        string rawResp = curentResp.downloadHandler.text;
+        var jsonData = JSON.Parse(rawResp);
+
+        if (jsonData["values"] != null)
+        {
+            var values = jsonData["values"].AsArray;
+
+            for (int i = 1; i < values.Count; i++)
+            {
+                var row = values[i].AsArray;
+
+                if (row.Count >= 2 && !string.IsNullOrEmpty(row[1]))
+                {
+                    goldsForCreeps.Add(row[2]);
+                }
+            }
+        }
+    }
+
+    IEnumerator PlaySelectAudioGood()
+    {
+        statusStart = true;
+        selectAudio = GetComponent<AudioSource>();
+        selectAudio.clip = goodSpeak;
+        selectAudio.Play();
+        yield return new WaitForSeconds(3);
+        statusStart = false;
+        i++;
+    }
+    IEnumerator PlaySelectAudioBad()
+    {
+        statusStart = true;
+        selectAudio = GetComponent<AudioSource>();
+        selectAudio.clip = badSpeak;
+        selectAudio.Play();
+        yield return new WaitForSeconds(3);
+        statusStart = false;
+        i++;
     }
 }
 
 ```
 
-## Задание 3
-### Оформить отчет в виде документации на github.
-
-- Из документа #Workshop#1 (полученного с сайта https://bigdigital-gamelab.ru/analiz-dannyh/) был получен шаблон отчёта по лабораторной работе.
-- Шаблон был скопирован в личный репозиторий.
-- В шаблон были внесены изменения в таблицу **отметка о выполнении заданий** и в **ФИО**, приведены ход и результаты выполнения заданий.
-
-![image](https://github.com/parallaxD/DA-in-GameDev-lab1/assets/81700733/836077db-19d7-4078-a956-438ddf787a65)
-
-![image](https://github.com/parallaxD/DA-in-GameDev-lab1/assets/81700733/6a498529-0e41-4bad-944b-63fc4bc9a6a2)
-
+https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/00190034-2d63-4b7f-bb01-349111034e0b
 
 
 
