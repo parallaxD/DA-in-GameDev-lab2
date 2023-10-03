@@ -214,7 +214,6 @@ for i in range(0, len(game_times)-1):
 
 ```
 
-![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/4761775f-22c1-4b44-8ad2-3b799f2727e0)
 
 ![image](https://github.com/parallaxD/DA-in-GameDev-lab2/assets/81700733/b8943c20-1577-4a4b-86e7-c8143e3b84e7)
 
